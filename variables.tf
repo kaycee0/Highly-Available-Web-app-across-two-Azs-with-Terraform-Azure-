@@ -1,6 +1,7 @@
 variable "project_name" {
   description = "Prefix used for all resource names and tags"
   type        = string
+  default = "Redbull-Racing"
 }
 
 variable "location" {
