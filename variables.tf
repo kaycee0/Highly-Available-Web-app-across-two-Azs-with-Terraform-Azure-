@@ -7,7 +7,7 @@ variable "project_name" {
 variable "location" {
   description = "Azure region to deploy into"
   type        = string
-  default     = "uksouth"
+  default     = "eastus"
 }
 
 variable "vnet_cidr" {
