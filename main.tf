@@ -25,3 +25,14 @@ resource "azurerm_subnet" "public" {
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes = [ cidrsubnet(var.vnet_cidr, 8, count.index) ]
 }
+
+# Private subnet — hosts the VM Scale Set instances
+
+resource "azurerm_subnet" "private" {
+  count = length(var.zones)
+
+  name                 = "private-subnet-${count.index}-${var.project_name}"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, count.index + length(var.zones))]
+}
