@@ -1,0 +1,6 @@
+.tfstate*
+.tfvars*
+.terraform/
+*.log
+*.tfplan
+provider.tf
