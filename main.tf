@@ -15,3 +15,13 @@ resource "azurerm_virtual_network" "main" {
     Name = "${var.project_name}-vnet"
   }
 }
+
+# Public subnet — hosts the Application Gateway and NAT Gateway
+
+resource "azurerm_subnet" "public" {
+    count              = length(var.zones)
+  name                 = "public-subnet-${count.index}-${var.project_name}"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes = [ cidrsubnet(var.vnet_cidr, 8, count.index) ]
+}
