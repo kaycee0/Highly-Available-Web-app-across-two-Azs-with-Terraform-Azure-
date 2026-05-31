@@ -47,3 +47,13 @@ resource "azurerm_public_ip" "nat" {
   zones               = [var.zones[count.index]]  # Pin each EIP to its own zone
 
 }
+
+resource "azurerm_nat_gateway" "main" {
+  count = length(var.zones)
+
+  name                = "${var.project_name}-nat-gateway-${count.index + 1}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku_name            = "Standard"
+  zones               = [var.zones[count.index]]  # Pin each NAT Gateway to its own zone
+}
