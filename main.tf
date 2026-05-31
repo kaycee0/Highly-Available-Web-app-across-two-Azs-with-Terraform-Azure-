@@ -57,3 +57,10 @@ resource "azurerm_nat_gateway" "main" {
   sku_name            = "Standard"
   zones               = [var.zones[count.index]]  # Pin each NAT Gateway to its own zone
 }
+
+resource "azurerm_nat_gateway_public_ip_association" "main" {
+  count = length(var.zones)
+
+  nat_gateway_id       = azurerm_nat_gateway.main[count.index].id
+  public_ip_address_id = azurerm_public_ip.nat[count.index].id
+}
