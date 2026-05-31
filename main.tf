@@ -64,3 +64,11 @@ resource "azurerm_nat_gateway_public_ip_association" "main" {
   nat_gateway_id       = azurerm_nat_gateway.main[count.index].id
   public_ip_address_id = azurerm_public_ip.nat[count.index].id
 }
+
+# Each private subnet gets its own NAT Gateway — traffic stays within the same zone
+resource "azurerm_subnet_nat_gateway_association" "private" {
+  count = length(var.zones)
+
+  subnet_id      = azurerm_subnet.private[count.index].id
+  nat_gateway_id = azurerm_nat_gateway.main[count.index].id
+}
