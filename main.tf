@@ -39,9 +39,11 @@ resource "azurerm_subnet" "private" {
 
 
 resource "azurerm_public_ip" "nat" {
-  name                = "${var.project_name}-nat-pip"
+    count = length(var.zones)
+  name                = "${var.project_name}-nat-pip-${count.index + 1}"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   allocation_method   = "Static"
-  zones               = var.zones
+  zones               = [var.zones[count.index]]  # Pin each EIP to its own zone
+
 }
