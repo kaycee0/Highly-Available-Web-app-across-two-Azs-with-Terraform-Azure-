@@ -37,6 +37,15 @@ resource "azurerm_subnet" "private" {
   address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, count.index + length(var.zones))]
 }
 
+# Bastion subnet — name is fixed, Azure requires exactly "AzureBastionSubnet"
+# Must be at least /26 (64 addresses) per Azure requirements
+resource "azurerm_subnet" "bastion" {
+  name                 = "AzureBastionSubnet"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, 10)]  # e.g. 10.0.10.0/24 — well clear of public/private ranges
+}
+
 
 resource "azurerm_public_ip" "nat" {
     count = length(var.zones)
