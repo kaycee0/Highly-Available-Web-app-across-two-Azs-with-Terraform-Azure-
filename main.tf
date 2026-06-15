@@ -113,3 +113,48 @@ resource "azurerm_network_security_group" "appgw" {
     destination_address_prefix = "*"
   }
 }
+
+# NSG for the private (app) subnet — only allow traffic from App Gateway subnet
+resource "azurerm_network_security_group" "app" {
+  name                = "${var.project_name}-app-nsg"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  security_rule {
+    name                       = "allow-appgw-to-app"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "8080"
+    source_address_prefixes    = [for s in azurerm_subnet.public : s.address_prefixes[0]]
+    destination_address_prefix = "*"
+  }
+
+  # Allow Bastion to reach VMs on SSH (22) — source is the AzureBastionSubnet CIDR only
+  # This means only traffic coming from Bastion can use port 22, not the open internet
+  security_rule {
+    name                       = "allow-bastion-to-vms"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["22"]
+    source_address_prefix      = cidrsubnet(var.vnet_cidr, 8, 10)  # AzureBastionSubnet — must match azurerm_subnet.bastion
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "deny-all-inbound"
+    priority                   = 200
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
