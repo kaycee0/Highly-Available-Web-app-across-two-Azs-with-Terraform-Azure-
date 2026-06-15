@@ -81,3 +81,35 @@ resource "azurerm_subnet_nat_gateway_association" "private" {
   subnet_id      = azurerm_subnet.private[count.index].id
   nat_gateway_id = azurerm_nat_gateway.main[count.index].id
 }
+
+# NSG for the Application Gateway subnet — allow HTTP from internet
+resource "azurerm_network_security_group" "appgw" {
+  name                = "${var.project_name}-appgw-nsg"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  security_rule {
+    name                       = "allow-http-inbound"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+
+  # Required rule for Application Gateway health probes and management traffic
+  security_rule {
+    name                       = "allow-appgw-management"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "65200-65535"
+    source_address_prefix      = "GatewayManager"
+    destination_address_prefix = "*"
+  }
+}
