@@ -43,17 +43,17 @@ resource "azurerm_subnet" "bastion" {
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, 10)]  # e.g. 10.0.10.0/24 — well clear of public/private ranges
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, 10)] # e.g. 10.0.10.0/24 — well clear of public/private ranges
 }
 
 
 resource "azurerm_public_ip" "nat" {
-    count = length(var.zones)
+  count               = length(var.zones)
   name                = "${var.project_name}-nat-pip-${count.index + 1}"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   allocation_method   = "Static"
-  zones               = [var.zones[count.index]]  # Pin each EIP to its own zone
+  zones               = [var.zones[count.index]] # Pin each EIP to its own zone
 
 }
 
@@ -64,7 +64,7 @@ resource "azurerm_nat_gateway" "main" {
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku_name            = "Standard"
-  zones               = [var.zones[count.index]]  # Pin each NAT Gateway to its own zone
+  zones               = [var.zones[count.index]] # Pin each NAT Gateway to its own zone
 }
 
 resource "azurerm_nat_gateway_public_ip_association" "main" {
@@ -142,7 +142,7 @@ resource "azurerm_network_security_group" "app" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_ranges    = ["22"]
-    source_address_prefix      = cidrsubnet(var.vnet_cidr, 8, 10)  # AzureBastionSubnet — must match azurerm_subnet.bastion
+    source_address_prefix      = azurerm_subnet.bastion.address_prefixes[0]
     destination_address_prefix = "*"
   }
 
@@ -158,7 +158,7 @@ resource "azurerm_network_security_group" "app" {
     destination_address_prefix = "*"
   }
 }
-NSGs subnet associations — each subnet gets its own NSG association, one for the App Gateway and one for the private app subnet
+# NSGs subnet associations — each subnet gets its own NSG association, one for the App Gateway and one for the private app subnet
 resource "azurerm_subnet_network_security_group_association" "appgw" {
   count = length(var.zones)
 
