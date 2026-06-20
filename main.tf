@@ -158,3 +158,17 @@ resource "azurerm_network_security_group" "app" {
     destination_address_prefix = "*"
   }
 }
+NSGs subnet associations — each subnet gets its own NSG association, one for the App Gateway and one for the private app subnet
+resource "azurerm_subnet_network_security_group_association" "appgw" {
+  count = length(var.zones)
+
+  subnet_id                 = azurerm_subnet.public[count.index].id
+  network_security_group_id = azurerm_network_security_group.appgw.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "app" {
+  count = length(var.zones)
+
+  subnet_id                 = azurerm_subnet.private[count.index].id
+  network_security_group_id = azurerm_network_security_group.app.id
+}
