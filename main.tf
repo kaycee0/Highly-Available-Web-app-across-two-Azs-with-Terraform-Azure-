@@ -172,3 +172,100 @@ resource "azurerm_subnet_network_security_group_association" "app" {
   subnet_id                 = azurerm_subnet.private[count.index].id
   network_security_group_id = azurerm_network_security_group.app.id
 }
+
+### Application Gateway (Azure equivalent of ALB)
+
+resource "azurerm_public_ip" "appgw" {
+  name                = "${var.project_name}-appgw-pip"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  zones               = var.zones
+
+  tags = {
+    Name = "${var.project_name}-appgw-pip"
+  }
+}
+
+locals {
+  appgw_backend_pool_name  = "${var.project_name}-backend-pool"
+  appgw_frontend_port_name = "${var.project_name}-frontend-port"
+  appgw_frontend_ip_name   = "${var.project_name}-frontend-ip"
+  appgw_http_setting_name  = "${var.project_name}-http-setting"
+  appgw_listener_name      = "${var.project_name}-http-listener"
+  appgw_rule_name          = "${var.project_name}-routing-rule"
+  appgw_probe_name         = "${var.project_name}-health-probe"
+}
+
+resource "azurerm_application_gateway" "main" {
+  name                = "${var.project_name}-appgw"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  zones               = var.zones
+
+  sku {
+    name     = "Standard_v2"
+    tier     = "Standard_v2"
+    capacity = 2 # Static capacity; use autoscale_configuration block for dynamic scaling
+  }
+
+  gateway_ip_configuration {
+    name      = "appgw-ip-config"
+    subnet_id = azurerm_subnet.public[0].id
+  }
+
+  frontend_ip_configuration {
+    name                 = local.appgw_frontend_ip_name
+    public_ip_address_id = azurerm_public_ip.appgw.id
+  }
+
+  frontend_port {
+    name = local.appgw_frontend_port_name
+    port = 80
+  }
+
+  backend_address_pool {
+    name = local.appgw_backend_pool_name
+  }
+
+  backend_http_settings {
+    name                  = local.appgw_http_setting_name
+    cookie_based_affinity = "Disabled"
+    port                  = 8080
+    protocol              = "Http"
+    request_timeout       = 60
+
+    probe_name = local.appgw_probe_name
+  }
+
+  probe {
+    name                = local.appgw_probe_name
+    host                = "127.0.0.1"
+    protocol            = "Http"
+    path                = "/"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+
+  http_listener {
+    name                           = local.appgw_listener_name
+    frontend_ip_configuration_name = local.appgw_frontend_ip_name
+    frontend_port_name             = local.appgw_frontend_port_name
+    protocol                       = "Http"
+  }
+
+  request_routing_rule {
+    name                       = local.appgw_rule_name
+    rule_type                  = "Basic"
+    http_listener_name         = local.appgw_listener_name
+    backend_address_pool_name  = local.appgw_backend_pool_name
+    backend_http_settings_name = local.appgw_http_setting_name
+    priority                   = 100
+  }
+
+  tags = {
+    Name = "${var.project_name}-appgw"
+  }
+}
