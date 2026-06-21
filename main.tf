@@ -311,3 +311,12 @@ resource "azurerm_user_assigned_identity" "app" {
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
 }
+
+### VM Scale Set (equivalent of ASG + Launch Template)
+
+data "azurerm_platform_image" "main" {
+  location  = var.location
+  publisher = "Canonical"
+  offer     = "0001-com-ubuntu-server-jammy"
+  sku       = "22_04-lts-gen2"
+}
