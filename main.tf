@@ -304,3 +304,10 @@ resource "azurerm_bastion_host" "main" {
 }
 **/
 
+### User-Assigned Managed Identity (equivalent of EC2 IAM role)
+
+resource "azurerm_user_assigned_identity" "app" {
+  name                = "${var.project_name}-vmss-identity"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+}
