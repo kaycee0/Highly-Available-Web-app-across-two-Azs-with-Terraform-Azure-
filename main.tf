@@ -269,3 +269,38 @@ resource "azurerm_application_gateway" "main" {
     Name = "${var.project_name}-appgw"
   }
 }
+
+### Azure Bastion (replaces SSH access — connect to private VMs via Azure Portal over HTTPS) This is a secure way to access VMs in private subnets without exposing SSH ports to the internet. 
+## However, it does require a dedicated subnet (AzureBastionSubnet) and a public IP address. Bastion is a managed service, so you don't have to worry about patching or maintaining it.
+## It needs a public IP and there is a limit to the number of Public IPs you can have in a subscription, so plan accordingly. Bastion is also not free, so check the pricing before deploying it.So 
+## we would be greying out the bastion host and public IP 
+
+/** resource "azurerm_public_ip" "bastion" {
+  name                = "${var.project_name}-bastion-pip"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+
+  tags = {
+    Name = "${var.project_name}-bastion-pip"
+  }
+}
+
+resource "azurerm_bastion_host" "main" {
+  name                = "${var.project_name}-bastion"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  ip_configuration {
+    name                 = "bastion-ip-config"
+    subnet_id            = azurerm_subnet.bastion.id
+    public_ip_address_id = azurerm_public_ip.bastion.id
+  }
+
+  tags = {
+    Name = "${var.project_name}-bastion"
+  }
+}
+**/
+
