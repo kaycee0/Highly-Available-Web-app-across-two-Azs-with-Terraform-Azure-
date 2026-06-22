@@ -21,3 +21,9 @@ variable "zones" {
   type        = list(string)
   default     = ["1", "2"]
 }
+
+
+variable "admin_password" {
+  description = "Password for the admin user"
+  type        = string
+}
