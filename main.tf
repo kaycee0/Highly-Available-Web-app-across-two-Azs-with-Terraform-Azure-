@@ -320,3 +320,55 @@ data "azurerm_platform_image" "main" {
   offer     = "0001-com-ubuntu-server-jammy"
   sku       = "22_04-lts-gen2"
 }
+
+resource "azurerm_linux_virtual_machine_scale_set" "app" {
+  name                = "${var.project_name}-vmss"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku                 = "Standard_D2ds_v7"
+  instances           = 2            # Desired capacity
+  zones               = var.zones
+
+  upgrade_mode = "Manual"
+
+
+
+  admin_username                  = "azureuser"
+  disable_password_authentication = false # Set to FAlse because we are not using SSH keys, but rather Azure Bastion for access.
+  admin_password                  = var.admin_password
+  # No SSH key — access is via Azure Bastion through the portal (HTTPS/443)
+  # Bastion authenticates using your Azure AD credentials; port 22 is never opened
+
+  source_image_reference {
+    publisher = data.azurerm_platform_image.main.publisher
+    offer     = data.azurerm_platform_image.main.offer
+    sku       = data.azurerm_platform_image.main.sku
+    version   = "latest"
+  }
+
+  os_disk {
+    storage_account_type = "Standard_LRS"
+    caching              = "ReadWrite"
+  }
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.app.id]
+  }
+
+  network_interface {
+    name    = "${var.project_name}-vmss-nic"
+    primary = true
+
+    ip_configuration {
+      name      = "internal"
+      primary   = true
+      subnet_id = azurerm_subnet.private[0].id
+      application_gateway_backend_address_pool_ids = [
+        for pool in azurerm_application_gateway.main.backend_address_pool :
+        pool.id if pool.name == local.appgw_backend_pool_name
+      ]
+    }
+  }
+
+}
